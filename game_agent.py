@@ -34,7 +34,6 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
     num_move_player1 = len(game.get_legal_moves(game._player_1))
     num_move_player2 = len(game.get_legal_moves(game._player_2))
     if game._player_1 == player:
@@ -66,8 +65,11 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float("-inf")
+    if game.is_winner(player):
+        return float("inf")
+    return float(len(game.get_legal_moves(player)))
 
 
 def custom_score_3(game, player):
@@ -93,7 +95,7 @@ def custom_score_3(game, player):
         The heuristic value of the current game state to the specified player.
     """
     # TODO: finish this function!
-    raise NotImplementedError
+    return 0
 
 
 class IsolationPlayer:
@@ -234,7 +236,7 @@ class MinimaxPlayer(IsolationPlayer):
             return -1
 
         if depth == 0:
-            return 0
+            return self.score(game, self)
 
         v = float("inf")
         for m in game.get_legal_moves():
@@ -250,7 +252,7 @@ class MinimaxPlayer(IsolationPlayer):
             return -1
 
         if depth == 0:
-            return 0
+            return self.score(game, self)
 
         v = float("-inf")
         for m in game.get_legal_moves():
@@ -261,8 +263,7 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        moves_available = bool(game.get_legal_moves())
-        return not moves_available
+        return not bool(game.get_legal_moves())
 
 class AlphaBetaPlayer(IsolationPlayer):
     """Game-playing agent that chooses a move using iterative deepening minimax
@@ -302,7 +303,6 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         self.time_left = time_left
 
-        # TODO: finish this function!
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
         best_move = (-1, -1)
@@ -310,8 +310,10 @@ class AlphaBetaPlayer(IsolationPlayer):
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
-            for depth in range(self.search_depth):
+            depth = 1
+            while True:
                 best_move = self.alphabeta(game, depth)
+                depth += 1
 
         except SearchTimeout:
             pass  # Handle any actions required after timeout as needed
@@ -367,18 +369,17 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
         if self.terminal_test(game):
             return -1
-
-        if depth == 0:
-            return 0
 
         best_score = float('-inf')
         best_move = None
 
         for m in game.get_legal_moves():
-            v = self.max_value(game, depth, float('-inf'), float('inf'))
+            v = self.max_value(game.forecast_move(m), depth-1, alpha, beta)
+
+            alpha = max(alpha, v)
+
             if best_score < v:
                 best_score = v
                 best_move = m
@@ -392,7 +393,7 @@ class AlphaBetaPlayer(IsolationPlayer):
             return -1
 
         if depth == 0:
-            return 0
+            return self.score(game, self)
 
         v = float('-inf')
         for m in game.get_legal_moves():
@@ -411,7 +412,7 @@ class AlphaBetaPlayer(IsolationPlayer):
             return -1
 
         if depth == 0:
-            return 0
+            return self.score(game, self)
 
         v = float('inf')
         for m in game.get_legal_moves():
@@ -425,5 +426,5 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        moves_available = bool(game.get_legal_moves())
-        return not moves_available
+        return not bool(game.get_legal_moves())
+
