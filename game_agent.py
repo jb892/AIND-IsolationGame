@@ -39,6 +39,7 @@ def custom_score(game, player):
     if game.is_winner(player):
         return float("inf")
 
+    # The best first move should always be the center of the board.
     h, w = int(game.height/2), int(game.width/2)
     if (h, w) == game.get_player_location(player):
         return float("inf")
@@ -46,8 +47,11 @@ def custom_score(game, player):
     own_moves = len(game.get_legal_moves(player))
     opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
 
+    # If the # of legal moves left for the player is the same as its opponent,
+    # We shall evaluate the game differently.
     if own_moves == opp_moves:
         y, x = game.get_player_location(player)
+        # By considering the distance from the center of the board to last move.
         return float(abs(h-y)+abs(w-x))/10.0
     else:
         return float(own_moves - opp_moves)
@@ -80,6 +84,7 @@ def custom_score_2(game, player):
     if game.is_winner(player):
         return float("inf")
 
+    # The best first move should always be the center of the board.
     best_first_move = (int(game.height/2), int(game.width/2))
     if best_first_move == game.get_player_location(player):
         return float("inf")
@@ -89,11 +94,19 @@ def custom_score_2(game, player):
     own_moves_num = len(own_moves)
     opp_moves_num = len(opp_moves)
 
+    # If the # of legal moves left for the player is the same as its opponent,
+    # We shall evaluate the game differently.
     if own_moves_num == opp_moves_num:
         own_pos = game.get_player_location(player)
         opp_pos = game.get_player_location(game.get_opponent(player))
+
+        # Calculation of the distance from the center to player's last move
         own_dis = abs(own_pos[0] - best_first_move[0]) + abs(own_pos[1] - best_first_move[1])
+
+        # Calculation of the distance from the center to opponent's last move
         opp_dis = abs(opp_pos[0] - best_first_move[0]) + abs(opp_pos[1] - best_first_move[1])
+
+        # By considering not only the distance of the player but also the opponent.
         return float(own_dis - opp_dis) / 10.0
     else:
         return float(own_moves_num - opp_moves_num)
@@ -126,12 +139,16 @@ def custom_score_3(game, player):
     if game.is_winner(player):
         return float("inf")
 
+    # The best first move should always be the center of the board.
     best_first_move = (int(game.height/2), int(game.width/2))
     if best_first_move == game.get_player_location(player):
         return float("inf")
 
     own_moves = len(game.get_legal_moves(player))
     opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+
+    # By simply multiplying opp_moves by a constant factor, the winning rate
+    # of current player is significantly increased.
     return float(own_moves - 2 * opp_moves)
 
 
@@ -342,11 +359,10 @@ class AlphaBetaPlayer(IsolationPlayer):
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
+            # Implementation of the iterative deepening search
             depth = 1
             while True:
                 best_move = self.alphabeta(game, depth)
-                #if best_score == float('inf') or best_score == float('-inf'):
-                #    break;
                 depth += 1
 
         except SearchTimeout:
