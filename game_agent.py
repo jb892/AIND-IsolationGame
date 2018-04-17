@@ -9,7 +9,6 @@ class SearchTimeout(Exception):
     """Subclass base exception for code clarity. """
     pass
 
-
 def custom_score(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
@@ -34,14 +33,24 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    num_move_player1 = len(game.get_legal_moves(game._player_1))
-    num_move_player2 = len(game.get_legal_moves(game._player_2))
-    if game._player_1 == player:
-        return num_move_player1 - 2 * num_move_player2
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    h, w = int(game.height/2), int(game.width/2)
+    if (h, w) == game.get_player_location(player):
+        return float("inf")
+
+    own_moves = len(game.get_legal_moves(player))
+    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+
+    if own_moves == opp_moves:
+        y, x = game.get_player_location(player)
+        return float(abs(h-y)+abs(w-x))/10.0
     else:
-        return num_move_player2 - 2 * num_move_player1
-
-
+        return float(own_moves - opp_moves)
 
 def custom_score_2(game, player):
     """Calculate the heuristic value of a game state from the point of view
@@ -67,10 +76,27 @@ def custom_score_2(game, player):
     """
     if game.is_loser(player):
         return float("-inf")
+
     if game.is_winner(player):
         return float("inf")
-    return float(len(game.get_legal_moves(player)))
 
+    best_first_move = (int(game.height/2), int(game.width/2))
+    if best_first_move == game.get_player_location(player):
+        return float("inf")
+
+    own_moves = game.get_legal_moves(player)
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+    own_moves_num = len(own_moves)
+    opp_moves_num = len(opp_moves)
+
+    if own_moves_num == opp_moves_num:
+        own_pos = game.get_player_location(player)
+        opp_pos = game.get_player_location(game.get_opponent(player))
+        own_dis = abs(own_pos[0] - best_first_move[0]) + abs(own_pos[1] - best_first_move[1])
+        opp_dis = abs(opp_pos[0] - best_first_move[0]) + abs(opp_pos[1] - best_first_move[1])
+        return float(own_dis - opp_dis) / 10.0
+    else:
+        return float(own_moves_num - opp_moves_num)
 
 def custom_score_3(game, player):
     """Calculate the heuristic value of a game state from the point of view
@@ -94,8 +120,19 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    return 0
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    best_first_move = (int(game.height/2), int(game.width/2))
+    if best_first_move == game.get_player_location(player):
+        return float("inf")
+
+    own_moves = len(game.get_legal_moves(player))
+    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(own_moves - 2 * opp_moves)
 
 
 class IsolationPlayer:
@@ -219,6 +256,7 @@ class MinimaxPlayer(IsolationPlayer):
         """
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
+
         best_score = float("-inf")
         best_move = None
         for m in game.get_legal_moves():
@@ -232,10 +270,7 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        if self.terminal_test(game):
-            return -1
-
-        if depth == 0:
+        if self.terminal_test(game) or depth == 0:
             return self.score(game, self)
 
         v = float("inf")
@@ -248,10 +283,7 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        if self.terminal_test(game):
-            return -1
-
-        if depth == 0:
+        if self.terminal_test(game) or depth == 0:
             return self.score(game, self)
 
         v = float("-inf")
@@ -313,6 +345,8 @@ class AlphaBetaPlayer(IsolationPlayer):
             depth = 1
             while True:
                 best_move = self.alphabeta(game, depth)
+                #if best_score == float('inf') or best_score == float('-inf'):
+                #    break;
                 depth += 1
 
         except SearchTimeout:
@@ -369,14 +403,11 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        if self.terminal_test(game):
-            return -1
-
         best_score = float('-inf')
-        best_move = None
+        best_move = (-1, -1)
 
         for m in game.get_legal_moves():
-            v = self.max_value(game.forecast_move(m), depth-1, alpha, beta)
+            v = self.min_value(game.forecast_move(m), depth-1, alpha, beta)
 
             alpha = max(alpha, v)
 
@@ -389,10 +420,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        if self.terminal_test(game):
-            return -1
-
-        if depth == 0:
+        if self.terminal_test(game) or depth == 0:
             return self.score(game, self)
 
         v = float('-inf')
@@ -408,10 +436,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        if self.terminal_test(game):
-            return -1
-
-        if depth == 0:
+        if self.terminal_test(game) or depth == 0:
             return self.score(game, self)
 
         v = float('inf')
@@ -427,4 +452,3 @@ class AlphaBetaPlayer(IsolationPlayer):
             raise SearchTimeout()
 
         return not bool(game.get_legal_moves())
-
